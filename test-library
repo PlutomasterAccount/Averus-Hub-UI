@@ -398,6 +398,9 @@ function Library:Create(config)
 
 	local searchOpen = false
 
+	-- FIX: tabClickHandlers stores a function per tab name so search results can fire the tab click
+	local tabClickHandlers = {}
+
 	searchBtn.MouseButton1Click:Connect(function()
 		searchOpen = not searchOpen
 		if searchOpen then
@@ -492,6 +495,23 @@ function Library:Create(config)
 					tw(row, 0.13, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
 					tw(rowStroke, 0.13, {Color = Color3.fromRGB(40, 40, 52)})
 				end)
+
+				-- FIX: clicking a search result navigates to its tab and closes the search overlay
+				local capturedEntry = entry
+				row.MouseButton1Click:Connect(function()
+					-- close search overlay
+					searchOpen = false
+					tw(globalSearchOverlay, 0.17, {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 28)})
+					tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(105, 105, 118)})
+					task.delay(0.19, function()
+						globalSearchOverlay.Visible = false
+					end)
+					-- fire the stored tab click handler
+					if tabClickHandlers[capturedEntry.tab] then
+						tabClickHandlers[capturedEntry.tab]()
+					end
+				end)
+
 				row.Parent = gsResults
 			end
 		end
@@ -501,6 +521,7 @@ function Library:Create(config)
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
 
+	-- FIX: drag offset — account for AnchorPoint so the frame doesn't jump when grabbed
 	local dragging = false
 	local dragOffX = 0
 	local dragOffY = 0
@@ -508,9 +529,13 @@ function Library:Create(config)
 	topBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
-			local absPos = main.AbsolutePosition
-			dragOffX = input.Position.X - absPos.X
-			dragOffY = input.Position.Y - absPos.Y
+			-- AbsolutePosition already accounts for anchor, so offset is simply mouse minus top-left corner
+			local topLeft = main.AbsolutePosition - Vector2.new(
+				main.AbsoluteSize.X * main.AnchorPoint.X,
+				main.AbsoluteSize.Y * main.AnchorPoint.Y
+			)
+			dragOffX = input.Position.X - topLeft.X
+			dragOffY = input.Position.Y - topLeft.Y
 		end
 	end)
 
@@ -530,6 +555,7 @@ function Library:Create(config)
 		local rawY = input.Position.Y - dragOffY
 		local clampedX = math.clamp(rawX, 0, screenSize.X - mw)
 		local clampedY = math.clamp(rawY, 0, screenSize.Y - mh)
+		-- position is offset from top-left; add anchor offset back for UDim2
 		local finalX = clampedX + mw * main.AnchorPoint.X
 		local finalY = clampedY + mh * main.AnchorPoint.Y
 		main.Position = UDim2.fromOffset(finalX, finalY)
@@ -616,8 +642,9 @@ function Library:Create(config)
 		tabBtnCorner.CornerRadius = UDim.new(0, 6)
 		tabBtnCorner.Parent = tabBtn
 
+		-- FIX: push text right enough so the active bar (3px wide + 3px margin = 6px) never overlaps it
 		local tabBtnPad = Instance.new("UIPadding")
-		tabBtnPad.PaddingLeft = UDim.new(0, 14)
+		tabBtnPad.PaddingLeft = UDim.new(0, 18)
 		tabBtnPad.Parent = tabBtn
 
 		local activeBar = Instance.new("Frame")
@@ -627,6 +654,9 @@ function Library:Create(config)
 		activeBar.Position = UDim2.new(0, 3, 0.5, -8)
 		activeBar.Size = UDim2.fromOffset(2, 16)
 		activeBar.BackgroundTransparency = 1
+		-- FIX: give the bar a higher ZIndex so it draws on top of everything inside the button,
+		-- but it is only 2px wide so it no longer sits under the text now that padding is 18px.
+		activeBar.ZIndex = tabBtn.ZIndex + 1
 
 		local activeBarCorner = Instance.new("UICorner")
 		activeBarCorner.CornerRadius = UDim.new(1, 0)
@@ -673,7 +703,8 @@ function Library:Create(config)
 			end
 		end)
 
-		tabBtn.MouseButton1Click:Connect(function()
+		-- FIX: store the click logic in tabClickHandlers so search results can invoke it
+		local function doTabClick()
 			for _, v in pairs(main:GetChildren()) do
 				if v.Name == "container" then
 					v.Visible = false
@@ -698,6 +729,12 @@ function Library:Create(config)
 			tw(tabBtn, 0.2, {TextTransparency = 0, BackgroundTransparency = 0.84, BackgroundColor3 = Color3.fromRGB(34, 54, 90), TextColor3 = Color3.fromRGB(210, 210, 220)})
 			tw(activeBar, 0.18, {BackgroundTransparency = 0})
 			pulse(activeBar, activeBarStroke)
+		end
+
+		tabClickHandlers[tabName] = doTabClick
+
+		tabBtn.MouseButton1Click:Connect(function()
+			doTabClick()
 		end)
 
 		local sectionHandler = {}
