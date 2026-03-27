@@ -499,47 +499,50 @@ function Library:Create(config)
 	end)
 
 	-- ── Dragging ────────────────────────────────────────────────────────────────
+local UserInputService = game:GetService("UserInputService")
+
 local dragging = false
-local dragOffset = Vector2.new()
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
 local openedAt = tick()
 
 topBar.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 
+	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	
 	if tick() - openedAt < 0.45 then return end
-	
-	dragging = true
-	
-	local center = main.AbsolutePosition + (main.AbsoluteSize * 0.5)
-	dragOffset = Vector2.new(input.Position.X, input.Position.Y) - center
-end)
 
-topBar.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+	dragging = true
+	dragInput = input
+	dragStart = input.Position
+	startPos = main.Position
+
+	input.Changed:Connect(function()
+		if input.UserInputState == Enum.UserInputState.End then
+			dragging = false
+		end
+	end)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
 	if not dragging then return end
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	if input ~= dragInput then return end
+
+	local delta = input.Position - dragStart
 	
 	local sw = arizon.AbsoluteSize.X
 	local sh = arizon.AbsoluteSize.Y
 	local mw = main.AbsoluteSize.X
 	local mh = main.AbsoluteSize.Y
-	
-	local newCenter = Vector2.new(input.Position.X, input.Position.Y) - dragOffset
-	
-	local clampedX = math.clamp(newCenter.X, mw * 0.5, sw - mw * 0.5)
-	local clampedY = math.clamp(newCenter.Y, mh * 0.5, sh - mh * 0.5)
-	
-	main.Position = UDim2.fromOffset(clampedX, clampedY)
-end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+	local newX = startPos.X.Offset + delta.X
+	local newY = startPos.Y.Offset + delta.Y
+
+	newX = math.clamp(newX, 0, sw - mw)
+	newY = math.clamp(newY, 0, sh - mh)
+
+	main.Position = UDim2.new(0, newX, 0, newY)
 end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
