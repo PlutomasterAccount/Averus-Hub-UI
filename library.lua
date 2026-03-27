@@ -500,63 +500,67 @@ function Library:Create(config)
 
 print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
-local UserInputService = game:GetService("UserInputService")
+topBar.Active = true
 
-task.spawn(function()
-	-- wait until everything exists (VERY IMPORTANT for libraries)
-	repeat task.wait() until topBar and main and arizon
+local dragging = false
+local dragOffset = Vector2.new()
 
-	topBar.Active = true
+topBar.InputBegan:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1
+	and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-	local dragging = false
-	local dragInput = nil
-	local dragStart = nil
-	local startPos = nil
+	dragging = true
 
-	topBar.InputBegan:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	-- use Mouse for PC, input for mobile
+	local pos = input.UserInputType == Enum.UserInputType.Touch and input.Position or Vector2.new(Mouse.X, Mouse.Y)
 
-		if not main then return end
+	dragOffset = Vector2.new(
+		pos.X - main.AbsolutePosition.X,
+		pos.Y - main.AbsolutePosition.Y
+	)
 
-		dragging = true
-		dragInput = input
-		dragStart = input.Position
-		startPos = main.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if not dragging then return end
-		if input ~= dragInput then return end
-		if not main or not arizon then return end
-
-		local delta = input.Position - dragStart
-
-		local newX = startPos.X.Offset + delta.X
-		local newY = startPos.Y.Offset + delta.Y
-
-		local sw = arizon.AbsoluteSize.X
-		local sh = arizon.AbsoluteSize.Y
-		local mw = main.AbsoluteSize.X
-		local mh = main.AbsoluteSize.Y
-
-		if sw == 0 or sh == 0 then return end -- prevent crash
-
-		newX = math.clamp(newX, 0, sw - mw)
-		newY = math.clamp(newY, 0, sh - mh)
-
-		main.Position = UDim2.new(0, newX, 0, newY)
-
-		if shadow then
-			shadow.Position = main.Position
+	input.Changed:Connect(function()
+		if input.UserInputState == Enum.UserInputState.End then
+			dragging = false
 		end
 	end)
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+	if not dragging then return end
+
+	local pos
+	if UserInputService.TouchEnabled then
+		local touches = UserInputService:GetTouches()
+		if #touches > 0 then
+			pos = touches[1].Position
+		end
+	else
+		pos = Vector2.new(Mouse.X, Mouse.Y)
+	end
+
+	if not pos then return end
+
+	local frameX = math.clamp(
+		pos.X - dragOffset.X,
+		0,
+		arizon.AbsoluteSize.X - main.AbsoluteSize.X
+	)
+
+	local frameY = math.clamp(
+		pos.Y - dragOffset.Y,
+		0,
+		arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
+	)
+
+	main.Position = UDim2.fromOffset(
+		frameX + (main.Size.X.Offset * main.AnchorPoint.X),
+		frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
+	)
+
+	if shadow then
+		shadow.Position = main.Position
+	end
 end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
