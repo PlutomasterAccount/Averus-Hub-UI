@@ -614,9 +614,8 @@ function Library:Create(config)
 		tabBtnCorner.CornerRadius = UDim.new(0, 6)
 		tabBtnCorner.Parent = tabBtn
 
-		-- FIX: PaddingLeft 18 keeps text right of the 2px active bar at x=3
 		local tabBtnPad = Instance.new("UIPadding")
-		tabBtnPad.PaddingLeft = UDim.new(0, 18)
+		tabBtnPad.PaddingLeft = UDim.new(0, 6)
 		tabBtnPad.Parent = tabBtn
 
 		local activeBar = Instance.new("Frame")
