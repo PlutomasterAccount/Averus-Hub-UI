@@ -500,55 +500,51 @@ function Library:Create(config)
 
 	-- ── Dragging ────────────────────────────────────────────────────────────────
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local dragging = false
-local dragOffset = Vector2.new()
+local dragInput
+local dragStart
+local startPos
 
 topBar.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1
-	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		
+		dragging = true
+		dragInput = input
+		dragStart = input.Position
+		startPos = main.Position
 
-	dragging = true
-
-	local inputPos = input.Position
-	dragOffset = Vector2.new(
-		inputPos.X - main.AbsolutePosition.X,
-		inputPos.Y - main.AbsolutePosition.Y
-	)
-
-	while dragging and input.UserInputState ~= Enum.UserInputState.End do
-		RunService.RenderStepped:Wait()
-
-		local currentPos = input.Position
-
-		local frameX = math.clamp(
-			currentPos.X - dragOffset.X,
-			0,
-			arizon.AbsoluteSize.X - main.AbsoluteSize.X
-		)
-
-		local frameY = math.clamp(
-			currentPos.Y - dragOffset.Y,
-			0,
-			arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
-		)
-
-		local finalPos = UDim2.fromOffset(
-			frameX + (main.Size.X.Offset * main.AnchorPoint.X),
-			frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
-		)
-
-		TweenService:Create(main, TweenInfo.new(0.08), {Position = finalPos}):Play()
-		TweenService:Create(shadow, TweenInfo.new(0.08), {Position = finalPos}):Play()
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
 	end
 end)
 
-topBar.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+	if input ~= dragInput then return end
+
+	local delta = input.Position - dragStart
+
+	local newX = startPos.X.Offset + delta.X
+	local newY = startPos.Y.Offset + delta.Y
+
+	-- clamp inside parent
+	local sw = arizon.AbsoluteSize.X
+	local sh = arizon.AbsoluteSize.Y
+	local mw = main.AbsoluteSize.X
+	local mh = main.AbsoluteSize.Y
+
+	newX = math.clamp(newX, 0, sw - mw)
+	newY = math.clamp(newY, 0, sh - mh)
+
+	main.Position = UDim2.new(0, newX, 0, newY)
+
+	if shadow then
+		shadow.Position = main.Position
 	end
 end)
 
