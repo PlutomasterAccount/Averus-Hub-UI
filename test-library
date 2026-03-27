@@ -990,8 +990,8 @@ function Library:Create(config)
 				inputBox.BackgroundTransparency = 1
 				inputBox.Size = UDim2.fromScale(1, 1)
 				local inputPad = Instance.new("UIPadding")
-				inputPad.PaddingLeft = UDim.new(0, 3)
-				inputPad.PaddingRight = UDim.new(0, 3)
+				inputPad.PaddingLeft = UDim.new(0, 7)
+				inputPad.PaddingRight = UDim.new(0, 7)
 				inputPad.Parent = inputBox
 				inputBox.Parent = inputWrap
 				inputWrap.Parent = xf
