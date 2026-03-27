@@ -499,26 +499,20 @@ function Library:Create(config)
 	end)
 
 	-- ── Dragging ────────────────────────────────────────────────────────────────
--- ── DRAGGING ───────────────────────────────────────────────────────────────
--- Services
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local Library = {}
 
-local LocalPlayer = Players.LocalPlayer
+function Library.MakeDraggable(frame, dragHandle)
+    if not frame or not dragHandle then return end
 
--- GUI references
-local arizon = script.Parent -- your ScreenGui
-local main = arizon:WaitForChild("Main") -- your draggable frame
-local topBar = main:WaitForChild("TopBar") -- the area to drag from
+    local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
 
--- Drag state
-local dragging = false
-local dragOffset = Vector2.new(0,0)
+    local dragging = false
+    local dragOffset = Vector2.new(0,0)
 
--- Input began
-topBar.InputBegan:Connect(function(input)
-    local ok, err = pcall(function()
+    dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1 and
            input.UserInputType ~= Enum.UserInputType.Touch then
             return
@@ -533,10 +527,7 @@ topBar.InputBegan:Connect(function(input)
             startPos = Vector2.new(mouse.X, mouse.Y)
         end
 
-        dragOffset = Vector2.new(
-            startPos.X - main.AbsolutePosition.X,
-            startPos.Y - main.AbsolutePosition.Y
-        )
+        dragOffset = startPos - frame.AbsolutePosition
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -544,12 +535,8 @@ topBar.InputBegan:Connect(function(input)
             end
         end)
     end)
-    if not ok then warn("InputBegan error:", err) end
-end)
 
--- Drag update
-RunService.RenderStepped:Connect(function()
-    local ok, err = pcall(function()
+    RunService.RenderStepped:Connect(function()
         if not dragging then return end
 
         local currentPos
@@ -563,26 +550,17 @@ RunService.RenderStepped:Connect(function()
             currentPos = Vector2.new(mouse.X, mouse.Y)
         end
 
-        if not currentPos then return end
+        if currentPos then
+            local x = math.clamp(currentPos.X - dragOffset.X, 0, frame.Parent.AbsoluteSize.X - frame.AbsoluteSize.X)
+            local y = math.clamp(currentPos.Y - dragOffset.Y, 0, frame.Parent.AbsoluteSize.Y - frame.AbsoluteSize.Y)
 
-        local frameX = math.clamp(
-            currentPos.X - dragOffset.X,
-            0,
-            arizon.AbsoluteSize.X - main.AbsoluteSize.X
-        )
-        local frameY = math.clamp(
-            currentPos.Y - dragOffset.Y,
-            0,
-            arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
-        )
-
-        main.Position = UDim2.fromOffset(
-            frameX + (main.Size.X.Offset * main.AnchorPoint.X),
-            frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
-        )
+            frame.Position = UDim2.fromOffset(
+                x + (frame.Size.X.Offset * frame.AnchorPoint.X),
+                y + (frame.Size.Y.Offset * frame.AnchorPoint.Y)
+            )
+        end
     end)
-    if not ok then warn("RenderStepped error:", err) end
-end)
+end
 
 -- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 local firstTabDone = false
