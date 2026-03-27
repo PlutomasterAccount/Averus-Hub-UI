@@ -558,10 +558,9 @@ game:GetService("RunService").RenderStepped:Connect(function()
 		frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
 	)
 
-	if shadow then
-		shadow.Position = main.Position
-	end
-end)
+if typeof(shadow) == "Instance" and shadow.Parent then
+    shadow.Position = main.Position
+end
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 
