@@ -502,57 +502,61 @@ print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
 local UserInputService = game:GetService("UserInputService")
 
-if not topBar or not main or not arizon then
-	warn("Drag failed: missing references", topBar, main, arizon)
-	return
-end
+task.spawn(function()
+	-- wait until everything exists (VERY IMPORTANT for libraries)
+	repeat task.wait() until topBar and main and arizon
 
-topBar.Active = true
+	topBar.Active = true
 
-local dragging = false
-local dragInput
-local dragStart
-local startPos
+	local dragging = false
+	local dragInput = nil
+	local dragStart = nil
+	local startPos = nil
 
-topBar.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1
-	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	topBar.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1
+		and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-	dragging = true
-	dragInput = input
-	dragStart = input.Position
-	startPos = main.Position
+		if not main then return end
 
-	input.Changed:Connect(function()
-		if input.UserInputState == Enum.UserInputState.End then
-			dragging = false
+		dragging = true
+		dragInput = input
+		dragStart = input.Position
+		startPos = main.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if not dragging then return end
+		if input ~= dragInput then return end
+		if not main or not arizon then return end
+
+		local delta = input.Position - dragStart
+
+		local newX = startPos.X.Offset + delta.X
+		local newY = startPos.Y.Offset + delta.Y
+
+		local sw = arizon.AbsoluteSize.X
+		local sh = arizon.AbsoluteSize.Y
+		local mw = main.AbsoluteSize.X
+		local mh = main.AbsoluteSize.Y
+
+		if sw == 0 or sh == 0 then return end -- prevent crash
+
+		newX = math.clamp(newX, 0, sw - mw)
+		newY = math.clamp(newY, 0, sh - mh)
+
+		main.Position = UDim2.new(0, newX, 0, newY)
+
+		if shadow then
+			shadow.Position = main.Position
 		end
 	end)
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if not dragging then return end
-	if input ~= dragInput then return end
-	if not main or not arizon then return end
-
-	local delta = input.Position - dragStart
-
-	local newX = startPos.X.Offset + delta.X
-	local newY = startPos.Y.Offset + delta.Y
-
-	local sw = arizon.AbsoluteSize.X
-	local sh = arizon.AbsoluteSize.Y
-	local mw = main.AbsoluteSize.X
-	local mh = main.AbsoluteSize.Y
-
-	newX = math.clamp(newX, 0, sw - mw)
-	newY = math.clamp(newY, 0, sh - mh)
-
-	main.Position = UDim2.new(0, newX, 0, newY)
-
-	if shadow then
-		shadow.Position = main.Position
-	end
 end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
