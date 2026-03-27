@@ -1,4 +1,4 @@
-    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/laderite/siernlib/main/library.lua"))()
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/PlutomasterAccount/Averus-Hub-UI/main/library.lua"))()
 
     local win = Library:Create({
         Name = "UI Library",
