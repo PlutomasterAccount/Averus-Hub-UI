@@ -498,66 +498,90 @@ function Library:Create(config)
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
 
-print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
 -- ── DRAGGING ───────────────────────────────────────────────────────────────
-topBar.Active = true
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI references
+local arizon = script.Parent -- your ScreenGui
+local main = arizon:WaitForChild("Main") -- your draggable frame
+local topBar = main:WaitForChild("TopBar") -- the area to drag from
+
+-- Drag state
 local dragging = false
-local dragOffset = Vector2.new()
+local dragOffset = Vector2.new(0,0)
 
+-- Input began
 topBar.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1
-	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    local ok, err = pcall(function()
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and
+           input.UserInputType ~= Enum.UserInputType.Touch then
+            return
+        end
 
-	dragging = true
+        dragging = true
+        local startPos
+        if input.UserInputType == Enum.UserInputType.Touch then
+            startPos = input.Position
+        else
+            local mouse = LocalPlayer:GetMouse()
+            startPos = Vector2.new(mouse.X, mouse.Y)
+        end
 
-	-- use Mouse for PC, input for mobile
-	local pos = input.UserInputType == Enum.UserInputType.Touch and input.Position or Vector2.new(Mouse.X, Mouse.Y)
+        dragOffset = Vector2.new(
+            startPos.X - main.AbsolutePosition.X,
+            startPos.Y - main.AbsolutePosition.Y
+        )
 
-	dragOffset = Vector2.new(
-		pos.X - main.AbsolutePosition.X,
-		pos.Y - main.AbsolutePosition.Y
-	)
-
-	input.Changed:Connect(function()
-		if input.UserInputState == Enum.UserInputState.End then
-			dragging = false
-		end
-	end)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end)
+    if not ok then warn("InputBegan error:", err) end
 end)
 
-game:GetService("RunService").RenderStepped:Connect(function()
-	if not dragging then return end
+-- Drag update
+RunService.RenderStepped:Connect(function()
+    local ok, err = pcall(function()
+        if not dragging then return end
 
-	local pos
-	if UserInputService.TouchEnabled then
-		local touches = UserInputService:GetTouches()
-		if #touches > 0 then
-			pos = touches[1].Position
-		end
-	else
-		pos = Vector2.new(Mouse.X, Mouse.Y)
-	end
+        local currentPos
+        if UserInputService.TouchEnabled then
+            local touches = UserInputService:GetTouches()
+            if #touches > 0 then
+                currentPos = touches[1].Position
+            end
+        else
+            local mouse = LocalPlayer:GetMouse()
+            currentPos = Vector2.new(mouse.X, mouse.Y)
+        end
 
-	if not pos then return end
+        if not currentPos then return end
 
-	local frameX = math.clamp(
-		pos.X - dragOffset.X,
-		0,
-		arizon.AbsoluteSize.X - main.AbsoluteSize.X
-	)
+        local frameX = math.clamp(
+            currentPos.X - dragOffset.X,
+            0,
+            arizon.AbsoluteSize.X - main.AbsoluteSize.X
+        )
+        local frameY = math.clamp(
+            currentPos.Y - dragOffset.Y,
+            0,
+            arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
+        )
 
-	local frameY = math.clamp(
-		pos.Y - dragOffset.Y,
-		0,
-		arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
-	)
-
-	main.Position = UDim2.fromOffset(
-		frameX + (main.Size.X.Offset * main.AnchorPoint.X),
-		frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
-	)
+        main.Position = UDim2.fromOffset(
+            frameX + (main.Size.X.Offset * main.AnchorPoint.X),
+            frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
+        )
+    end)
+    if not ok then warn("RenderStepped error:", err) end
 end)
 
 -- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
@@ -1392,4 +1416,4 @@ end)
 	return tabHandler
 end
 
-return Library 
+return Library
