@@ -500,6 +500,7 @@ function Library:Create(config)
 
 print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
+-- ── DRAGGING ───────────────────────────────────────────────────────────────
 topBar.Active = true
 
 local dragging = false
@@ -557,6 +558,33 @@ game:GetService("RunService").RenderStepped:Connect(function()
 		frameX + (main.Size.X.Offset * main.AnchorPoint.X),
 		frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
 	)
+end)
+
+-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
+local firstTabDone = false
+tabScroll.ChildAdded:Connect(function(child)
+	if child:IsA("TextButton") and not firstTabDone then
+		firstTabDone = true
+		task.spawn(function()
+			repeat task.wait() until main:FindFirstChild("container")
+			local c = main:FindFirstChild("container")
+			if c then
+				c.Visible = true
+				tw(child, 0.28, {TextTransparency = 0, BackgroundTransparency = 0.84, BackgroundColor3 = Color3.fromRGB(34, 54, 90), TextColor3 = Color3.fromRGB(210, 210, 220)})
+				local bar = child:FindFirstChild("activeBar")
+				if bar then
+					tw(bar, 0.24, {BackgroundTransparency = 0})
+					local bs = bar:FindFirstChildWhichIsA("UIStroke")
+					if bs then pulse(bar, bs) end
+				end
+			end
+		end)
+	end
+	task.spawn(function()
+		task.wait()
+		tabScroll.CanvasSize = UDim2.new(0, 0, 0, tabList.AbsoluteContentSize.Y + 14)
+	end)
+end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 
@@ -1364,4 +1392,4 @@ game:GetService("RunService").RenderStepped:Connect(function()
 	return tabHandler
 end
 
-return Library
+return Library 
