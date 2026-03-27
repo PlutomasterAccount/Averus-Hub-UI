@@ -497,10 +497,17 @@ function Library:Create(config)
 		task.wait()
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
-	
+
 print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
 local UserInputService = game:GetService("UserInputService")
+
+if not topBar or not main or not arizon then
+	warn("Drag failed: missing references", topBar, main, arizon)
+	return
+end
+
+topBar.Active = true
 
 local dragging = false
 local dragInput
@@ -508,32 +515,31 @@ local dragStart
 local startPos
 
 topBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
-		
-		dragging = true
-		dragInput = input
-		dragStart = input.Position
-		startPos = main.Position
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1
+	and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+	dragging = true
+	dragInput = input
+	dragStart = input.Position
+	startPos = main.Position
+
+	input.Changed:Connect(function()
+		if input.UserInputState == Enum.UserInputState.End then
+			dragging = false
+		end
+	end)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
 	if not dragging then return end
 	if input ~= dragInput then return end
+	if not main or not arizon then return end
 
 	local delta = input.Position - dragStart
 
 	local newX = startPos.X.Offset + delta.X
 	local newY = startPos.Y.Offset + delta.Y
 
-	-- clamp inside parent
 	local sw = arizon.AbsoluteSize.X
 	local sh = arizon.AbsoluteSize.Y
 	local mw = main.AbsoluteSize.X
