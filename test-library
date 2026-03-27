@@ -498,48 +498,49 @@ function Library:Create(config)
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
 
-	-- ── DRAG — fixed ──────────────────────────────────────────────────────────
-	-- AbsolutePosition is ALWAYS the top-left pixel corner of the frame,
-	-- regardless of AnchorPoint. So offset = mousePos - AbsolutePosition.
-	-- To set position we need the CENTER (because AnchorPoint = 0.5,0.5),
-	-- which is topLeft + size/2. Guard against accidental drags during open anim.
-	local dragging = false
-	local dragOffX, dragOffY = 0, 0
-	local openedAt = tick()
+	-- ── Dragging ────────────────────────────────────────────────────────────────
+local dragging = false
+local dragOffset = Vector2.new()
+local openedAt = tick()
 
-	topBar.InputBegan:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-		if tick() - openedAt < 0.45 then return end   -- wait for open anim
-		dragging = true
-		dragOffX = input.Position.X - main.AbsolutePosition.X
-		dragOffY = input.Position.Y - main.AbsolutePosition.Y
-	end)
+topBar.InputBegan:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	if tick() - openedAt < 0.45 then return end
+	
+	dragging = true
+	
+	local center = main.AbsolutePosition + (main.AbsoluteSize * 0.5)
+	dragOffset = Vector2.new(input.Position.X, input.Position.Y) - center
+end)
 
-	topBar.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
+topBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
 
-	UserInputService.InputChanged:Connect(function(input)
-		if not dragging then return end
-		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
-		local sw = arizon.AbsoluteSize.X
-		local sh = arizon.AbsoluteSize.Y
-		local mw = main.AbsoluteSize.X
-		local mh = main.AbsoluteSize.Y
-		-- top-left corner clamped to screen
-		local tlX = math.clamp(input.Position.X - dragOffX, 0, sw - mw)
-		local tlY = math.clamp(input.Position.Y - dragOffY, 0, sh - mh)
-		-- stored position must be the CENTER because AnchorPoint = (0.5, 0.5)
-		main.Position = UDim2.fromOffset(tlX + mw * 0.5, tlY + mh * 0.5)
-	end)
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	
+	local sw = arizon.AbsoluteSize.X
+	local sh = arizon.AbsoluteSize.Y
+	local mw = main.AbsoluteSize.X
+	local mh = main.AbsoluteSize.Y
+	
+	local newCenter = Vector2.new(input.Position.X, input.Position.Y) - dragOffset
+	
+	local clampedX = math.clamp(newCenter.X, mw * 0.5, sw - mw * 0.5)
+	local clampedY = math.clamp(newCenter.Y, mh * 0.5, sh - mh * 0.5)
+	
+	main.Position = UDim2.fromOffset(clampedX, clampedY)
+end)
 
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 
