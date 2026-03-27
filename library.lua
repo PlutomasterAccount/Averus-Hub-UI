@@ -497,7 +497,8 @@ function Library:Create(config)
 		task.wait()
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
-
+	
+print(topBar, main, arizon)
 	-- ── Dragging ────────────────────────────────────────────────────────────────
 local UserInputService = game:GetService("UserInputService")
 
