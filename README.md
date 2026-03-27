@@ -1,7 +1,6 @@
-# siernlib
+# Averus UI
 
-siernlib is a open sourced Roblox UI library
-Support server: discord.gg/zen
+Averus UI is a open sourced Roblox UI library
 
 ## Features:
 - Buttons
@@ -16,7 +15,7 @@ Showcasing all the UI Elements
 
 # Load the library
 ```lua
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/laderite/siernlib/main/library.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PlutomasterAccount/Averus-Hub-UI/main/library.lua"))()
 ```
 
 # Creating the UI
