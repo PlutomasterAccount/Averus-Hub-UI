@@ -499,18 +499,58 @@ function Library:Create(config)
 	end)
 
 	-- ── Dragging ────────────────────────────────────────────────────────────────
-        topBar.MouseEnter:Connect(function()
-            local Input = topBar.InputBegan:connect(function(Key)
-                if Key.UserInputType == Enum.UserInputType.MouseButton1 then
-                    local ObjectPosition = Vector2.new(Mouse.X - main.AbsolutePosition.X, Mouse.Y - main.AbsolutePosition.Y)
-                    while RunService.RenderStepped:wait() and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                        local FrameX, FrameY = math.clamp(Mouse.X - ObjectPosition.X, 0, arizon.AbsoluteSize.X - main.AbsoluteSize.X), math.clamp(Mouse.Y - ObjectPosition.Y, 0, arizon.AbsoluteSize.Y - main.AbsoluteSize.Y)
-                        game:GetService('TweenService'):Create(main, TweenInfo.new(0.1), {Position = UDim2.fromOffset(FrameX + (main.Size.X.Offset * main.AnchorPoint.X), FrameY + (main.Size.Y.Offset * main.AnchorPoint.Y))}):Play()
-                        game:GetService('TweenService'):Create(shadow, TweenInfo.new(0.1), {Position = UDim2.fromOffset(FrameX + (main.Size.X.Offset * main.AnchorPoint.X), FrameY + (main.Size.Y.Offset * main.AnchorPoint.Y))}):Play()
-                    end
-                end
-            end)
-        end)
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local dragging = false
+local dragOffset = Vector2.new()
+
+topBar.InputBegan:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1
+	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+	dragging = true
+
+	local inputPos = input.Position
+	dragOffset = Vector2.new(
+		inputPos.X - main.AbsolutePosition.X,
+		inputPos.Y - main.AbsolutePosition.Y
+	)
+
+	while dragging and input.UserInputState ~= Enum.UserInputState.End do
+		RunService.RenderStepped:Wait()
+
+		local currentPos = input.Position
+
+		local frameX = math.clamp(
+			currentPos.X - dragOffset.X,
+			0,
+			arizon.AbsoluteSize.X - main.AbsoluteSize.X
+		)
+
+		local frameY = math.clamp(
+			currentPos.Y - dragOffset.Y,
+			0,
+			arizon.AbsoluteSize.Y - main.AbsoluteSize.Y
+		)
+
+		local finalPos = UDim2.fromOffset(
+			frameX + (main.Size.X.Offset * main.AnchorPoint.X),
+			frameY + (main.Size.Y.Offset * main.AnchorPoint.Y)
+		)
+
+		TweenService:Create(main, TweenInfo.new(0.08), {Position = finalPos}):Play()
+		TweenService:Create(shadow, TweenInfo.new(0.08), {Position = finalPos}):Play()
+	end
+end)
+
+topBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
 
 	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 
