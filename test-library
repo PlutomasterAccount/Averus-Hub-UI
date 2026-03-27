@@ -38,8 +38,8 @@ local function ripple(parent, x, y)
 	rc.Parent = rip
 	rip.Parent = parent
 	local sz = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 2.4
-	tw(rip, 0.5, {Size = UDim2.fromOffset(sz, sz), BackgroundTransparency = 1})
-	game:GetService("Debris"):AddItem(rip, 0.55)
+	tw(rip, 0.55, {Size = UDim2.fromOffset(sz, sz), BackgroundTransparency = 1})
+	game:GetService("Debris"):AddItem(rip, 0.6)
 end
 
 local function pulse(frame, stroke)
@@ -54,6 +54,7 @@ local function pulse(frame, stroke)
 end
 
 local allElements = {}
+local tabClickHandlers = {}
 
 function Library:Create(config)
 	local MAIN_W, MAIN_H = 380, 258
@@ -62,33 +63,35 @@ function Library:Create(config)
 	main.Name = "main"
 	main.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 	main.BorderSizePixel = 0
-	main.Size = UDim2.fromOffset(0, 0)
+	main.Size = UDim2.fromOffset(MAIN_W, MAIN_H)
 	main.AnchorPoint = Vector2.new(0.5, 0.5)
-	main.Position = UDim2.new(0.5, 0, 0.5, 0)
+	-- FIX open anim: start below center, fade+slide up (no Size tween = no anchor offset weirdness)
+	main.Position = UDim2.new(0.5, 0, 0.62, 0)
+	main.BackgroundTransparency = 1
 	main.ClipsDescendants = true
 
 	local mainCorner = Instance.new("UICorner")
-	mainCorner.CornerRadius = UDim.new(0, 9)
+	mainCorner.CornerRadius = UDim.new(0, 10)
 	mainCorner.Parent = main
 
 	local mainStroke = Instance.new("UIStroke")
-	mainStroke.Color = Color3.fromRGB(48, 48, 54)
+	mainStroke.Color = Color3.fromRGB(52, 52, 62)
 	mainStroke.Thickness = 1
 	mainStroke.Transparency = 1
 	mainStroke.Parent = main
 
 	local topBar = Instance.new("Frame")
 	topBar.Name = "topBar"
-	topBar.BackgroundColor3 = Color3.fromRGB(26, 26, 29)
+	topBar.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
 	topBar.BorderSizePixel = 0
 	topBar.Size = UDim2.new(1, 0, 0, 38)
 
 	local topCorner = Instance.new("UICorner")
-	topCorner.CornerRadius = UDim.new(0, 9)
+	topCorner.CornerRadius = UDim.new(0, 10)
 	topCorner.Parent = topBar
 
 	local topFix = Instance.new("Frame")
-	topFix.BackgroundColor3 = Color3.fromRGB(26, 26, 29)
+	topFix.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
 	topFix.BorderSizePixel = 0
 	topFix.Position = UDim2.new(0, 0, 0.5, 0)
 	topFix.Size = UDim2.new(1, 0, 0.5, 0)
@@ -97,7 +100,7 @@ function Library:Create(config)
 	local menuBtn = Instance.new("ImageButton")
 	menuBtn.Name = "menu"
 	menuBtn.Image = "http://www.roblox.com/asset/?id=9633864839"
-	menuBtn.ImageColor3 = Color3.fromRGB(140, 140, 152)
+	menuBtn.ImageColor3 = Color3.fromRGB(132, 132, 148)
 	menuBtn.BackgroundTransparency = 1
 	menuBtn.Position = UDim2.new(0, 10, 0.5, -9)
 	menuBtn.Size = UDim2.fromOffset(18, 18)
@@ -106,7 +109,7 @@ function Library:Create(config)
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = config.Name or "arizon"
-	titleLabel.TextColor3 = Color3.fromRGB(215, 215, 220)
+	titleLabel.TextColor3 = Color3.fromRGB(212, 212, 220)
 	titleLabel.TextSize = 12
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.BackgroundTransparency = 1
@@ -115,7 +118,7 @@ function Library:Create(config)
 	titleLabel.Parent = topBar
 
 	local topDivider = Instance.new("Frame")
-	topDivider.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
+	topDivider.BackgroundColor3 = Color3.fromRGB(38, 38, 46)
 	topDivider.BorderSizePixel = 0
 	topDivider.Position = UDim2.new(0, 0, 1, -1)
 	topDivider.Size = UDim2.new(1, 0, 0, 1)
@@ -124,7 +127,7 @@ function Library:Create(config)
 	local searchBtn = Instance.new("ImageButton")
 	searchBtn.Name = "searchBtn"
 	searchBtn.Image = "http://www.roblox.com/asset/?id=9701781161"
-	searchBtn.ImageColor3 = Color3.fromRGB(105, 105, 118)
+	searchBtn.ImageColor3 = Color3.fromRGB(102, 102, 116)
 	searchBtn.ScaleType = Enum.ScaleType.Fit
 	searchBtn.BackgroundTransparency = 1
 	searchBtn.Position = UDim2.new(1, -52, 0.5, -8)
@@ -134,7 +137,7 @@ function Library:Create(config)
 	local closeBtn = Instance.new("ImageButton")
 	closeBtn.Name = "close"
 	closeBtn.Image = "rbxassetid://6031094678"
-	closeBtn.ImageColor3 = Color3.fromRGB(105, 105, 118)
+	closeBtn.ImageColor3 = Color3.fromRGB(102, 102, 116)
 	closeBtn.ScaleType = Enum.ScaleType.Fit
 	closeBtn.BackgroundTransparency = 1
 	closeBtn.Position = UDim2.new(1, -28, 0.5, -9)
@@ -142,6 +145,8 @@ function Library:Create(config)
 	closeBtn.Parent = topBar
 
 	topBar.Parent = main
+
+	-- ── TAB PANEL ──────────────────────────────────────────────────────────────
 
 	local tabPanel = Instance.new("Frame")
 	tabPanel.Name = "tabContainer"
@@ -161,7 +166,7 @@ function Library:Create(config)
 
 	local sideFrame = Instance.new("Frame")
 	sideFrame.Name = "frame3"
-	sideFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
+	sideFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
 	sideFrame.BorderSizePixel = 0
 	sideFrame.Size = UDim2.fromOffset(150, MAIN_H)
 	sideFrame.Position = UDim2.fromOffset(-24, 0)
@@ -172,7 +177,7 @@ function Library:Create(config)
 	sideCorner.Parent = sideFrame
 
 	local sideFix = Instance.new("Frame")
-	sideFix.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
+	sideFix.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
 	sideFix.BorderSizePixel = 0
 	sideFix.Position = UDim2.fromScale(0.5, 0)
 	sideFix.Size = UDim2.new(0.5, 0, 1, 0)
@@ -188,7 +193,7 @@ function Library:Create(config)
 
 	local closePanelBtn = Instance.new("ImageButton")
 	closePanelBtn.Image = "rbxassetid://6031094678"
-	closePanelBtn.ImageColor3 = Color3.fromRGB(105, 105, 118)
+	closePanelBtn.ImageColor3 = Color3.fromRGB(102, 102, 116)
 	closePanelBtn.ScaleType = Enum.ScaleType.Fit
 	closePanelBtn.BackgroundTransparency = 1
 	closePanelBtn.Position = UDim2.new(0, 8, 0, 10)
@@ -197,7 +202,7 @@ function Library:Create(config)
 	closePanelBtn.Parent = sideFrame
 
 	local sideDivider = Instance.new("Frame")
-	sideDivider.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
+	sideDivider.BackgroundColor3 = Color3.fromRGB(38, 38, 46)
 	sideDivider.BorderSizePixel = 0
 	sideDivider.Position = UDim2.fromOffset(0, 36)
 	sideDivider.Size = UDim2.fromOffset(150, 1)
@@ -205,7 +210,7 @@ function Library:Create(config)
 
 	local tabScroll = Instance.new("ScrollingFrame")
 	tabScroll.Name = "holder"
-	tabScroll.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 82)
+	tabScroll.ScrollBarImageColor3 = Color3.fromRGB(65, 65, 78)
 	tabScroll.ScrollBarThickness = 2
 	tabScroll.Active = true
 	tabScroll.BackgroundTransparency = 1
@@ -230,6 +235,8 @@ function Library:Create(config)
 	sideFrame.Parent = tabPanel
 	tabPanel.Parent = main
 
+	-- ── GLOBAL SEARCH ──────────────────────────────────────────────────────────
+
 	local globalSearchOverlay = Instance.new("Frame")
 	globalSearchOverlay.Name = "globalSearch"
 	globalSearchOverlay.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
@@ -241,14 +248,14 @@ function Library:Create(config)
 	globalSearchOverlay.Visible = false
 
 	local gsTopRow = Instance.new("Frame")
-	gsTopRow.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+	gsTopRow.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
 	gsTopRow.BorderSizePixel = 0
 	gsTopRow.Size = UDim2.new(1, 0, 0, 40)
 	gsTopRow.ZIndex = 21
 	gsTopRow.Parent = globalSearchOverlay
 
 	local gsTopStroke = Instance.new("UIStroke")
-	gsTopStroke.Color = Color3.fromRGB(44, 44, 54)
+	gsTopStroke.Color = Color3.fromRGB(42, 42, 52)
 	gsTopStroke.Thickness = 1
 	gsTopStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	gsTopStroke.Parent = gsTopRow
@@ -264,7 +271,7 @@ function Library:Create(config)
 
 	local gsBox = Instance.new("TextBox")
 	gsBox.Font = Enum.Font.GothamMedium
-	gsBox.PlaceholderColor3 = Color3.fromRGB(78, 78, 96)
+	gsBox.PlaceholderColor3 = Color3.fromRGB(72, 72, 90)
 	gsBox.PlaceholderText = "Search all elements..."
 	gsBox.Text = ""
 	gsBox.TextColor3 = Color3.fromRGB(205, 205, 215)
@@ -273,7 +280,6 @@ function Library:Create(config)
 	gsBox.BackgroundTransparency = 1
 	gsBox.Size = UDim2.new(1, 0, 1, 0)
 	gsBox.ZIndex = 22
-
 	local gsPad = Instance.new("UIPadding")
 	gsPad.PaddingLeft = UDim.new(0, 36)
 	gsPad.PaddingRight = UDim.new(0, 8)
@@ -281,7 +287,7 @@ function Library:Create(config)
 	gsBox.Parent = gsTopRow
 
 	local gsRowDiv = Instance.new("Frame")
-	gsRowDiv.BackgroundColor3 = Color3.fromRGB(38, 38, 48)
+	gsRowDiv.BackgroundColor3 = Color3.fromRGB(36, 36, 46)
 	gsRowDiv.BorderSizePixel = 0
 	gsRowDiv.Position = UDim2.new(0, 0, 1, -1)
 	gsRowDiv.Size = UDim2.new(1, 0, 0, 1)
@@ -325,42 +331,27 @@ function Library:Create(config)
 	gsNoResults.Parent = globalSearchOverlay
 
 	globalSearchOverlay.Parent = main
-
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "shadow"
-	shadow.Image = "rbxassetid://297774371"
-	shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.ImageTransparency = 1
-	shadow.ScaleType = Enum.ScaleType.Slice
-	shadow.SliceCenter = Rect.new(20, 20, 280, 280)
-	shadow.BackgroundTransparency = 1
-	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-	shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	shadow.Size = UDim2.fromOffset(MAIN_W + 44, MAIN_H + 34)
-	shadow.ZIndex = -1
-	shadow.Parent = arizon
-
 	main.Parent = arizon
 
-	task.delay(0.04, function()
-		twSpring(main, 0.52, {Size = UDim2.fromOffset(MAIN_W, MAIN_H), BackgroundTransparency = 0})
-		tw(mainStroke, 0.4, {Transparency = 0})
-		tw(shadow, 0.5, {ImageTransparency = 0.46})
+	-- ── OPEN ANIMATION (slide up + fade, fixed size so no anchor drift) ────────
+	task.delay(0.02, function()
+		tw(main, 0.38, {BackgroundTransparency = 0, Position = UDim2.new(0.5, 0, 0.5, 0)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		tw(mainStroke, 0.3, {Transparency = 0})
 	end)
 
+	-- ── ICON HOVER ────────────────────────────────────────────────────────────
+
 	local function hoverIcon(btn, onCol, offCol)
-		btn.MouseEnter:Connect(function()
-			tw(btn, 0.15, {ImageColor3 = onCol})
-		end)
-		btn.MouseLeave:Connect(function()
-			tw(btn, 0.15, {ImageColor3 = offCol})
-		end)
+		btn.MouseEnter:Connect(function() tw(btn, 0.15, {ImageColor3 = onCol}) end)
+		btn.MouseLeave:Connect(function() tw(btn, 0.15, {ImageColor3 = offCol}) end)
 	end
 
-	hoverIcon(menuBtn, Color3.fromRGB(225, 225, 232), Color3.fromRGB(140, 140, 152))
-	hoverIcon(searchBtn, Color3.fromRGB(80, 155, 255), Color3.fromRGB(105, 105, 118))
-	hoverIcon(closeBtn, Color3.fromRGB(255, 75, 75), Color3.fromRGB(105, 105, 118))
-	hoverIcon(closePanelBtn, Color3.fromRGB(255, 75, 75), Color3.fromRGB(105, 105, 118))
+	hoverIcon(menuBtn,       Color3.fromRGB(225, 225, 232), Color3.fromRGB(132, 132, 148))
+	hoverIcon(searchBtn,     Color3.fromRGB(80, 155, 255),  Color3.fromRGB(102, 102, 116))
+	hoverIcon(closeBtn,      Color3.fromRGB(255, 75, 75),   Color3.fromRGB(102, 102, 116))
+	hoverIcon(closePanelBtn, Color3.fromRGB(255, 75, 75),   Color3.fromRGB(102, 102, 116))
+
+	-- ── MENU ──────────────────────────────────────────────────────────────────
 
 	menuBtn.MouseButton1Click:Connect(function()
 		tabPanel.Visible = true
@@ -368,38 +359,35 @@ function Library:Create(config)
 		sideFrame.BackgroundTransparency = 1
 		sideFix.BackgroundTransparency = 1
 		sideStroke.Transparency = 1
-		sideFrame.Position = UDim2.fromOffset(-28, 0)
+		sideFrame.Position = UDim2.fromOffset(-36, 0)
 		tw(tabPanel, 0.22, {BackgroundTransparency = 0.35})
-		tw(sideFrame, 0.28, {BackgroundTransparency = 0, Position = UDim2.fromOffset(0, 0)})
+		tw(sideFrame, 0.3, {BackgroundTransparency = 0, Position = UDim2.fromOffset(0, 0)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 		tw(sideFix, 0.28, {BackgroundTransparency = 0})
 		tw(sideStroke, 0.28, {Transparency = 0})
 	end)
 
 	closePanelBtn.MouseButton1Click:Connect(function()
-		tw(sideFrame, 0.22, {BackgroundTransparency = 1, Position = UDim2.fromOffset(-24, 0)})
-		tw(sideFix, 0.22, {BackgroundTransparency = 1})
-		tw(sideStroke, 0.22, {Transparency = 1})
+		tw(sideFrame, 0.2, {BackgroundTransparency = 1, Position = UDim2.fromOffset(-28, 0)}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+		tw(sideFix, 0.18, {BackgroundTransparency = 1})
+		tw(sideStroke, 0.18, {Transparency = 1})
 		tw(tabPanel, 0.2, {BackgroundTransparency = 1})
-		task.delay(0.24, function()
+		task.delay(0.22, function()
 			tabPanel.Visible = false
 			sideFrame.Position = UDim2.fromOffset(-24, 0)
 		end)
 	end)
 
+	-- ── CLOSE ─────────────────────────────────────────────────────────────────
+
 	closeBtn.MouseButton1Click:Connect(function()
-		tw(main, 0.26, {BackgroundTransparency = 1})
-		tw(mainStroke, 0.18, {Transparency = 1})
-		tw(shadow, 0.26, {ImageTransparency = 1})
-		twSpring(main, 0.26, {Size = UDim2.fromOffset(MAIN_W, 0)})
-		task.delay(0.3, function()
-			arizon:Destroy()
-		end)
+		tw(main, 0.24, {BackgroundTransparency = 1, Position = UDim2.new(0.5, 0, 0.58, 0)}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+		tw(mainStroke, 0.14, {Transparency = 1})
+		task.delay(0.27, function() arizon:Destroy() end)
 	end)
 
-	local searchOpen = false
+	-- ── SEARCH ────────────────────────────────────────────────────────────────
 
-	-- FIX: tabClickHandlers stores a function per tab name so search results can fire the tab click
-	local tabClickHandlers = {}
+	local searchOpen = false
 
 	searchBtn.MouseButton1Click:Connect(function()
 		searchOpen = not searchOpen
@@ -413,17 +401,13 @@ function Library:Create(config)
 			globalSearchOverlay.Visible = true
 			globalSearchOverlay.BackgroundTransparency = 1
 			globalSearchOverlay.Position = UDim2.new(0, 0, 0, 28)
-			tw(globalSearchOverlay, 0.2, {BackgroundTransparency = 0, Position = UDim2.new(0, 0, 0, 38)})
+			tw(globalSearchOverlay, 0.22, {BackgroundTransparency = 0, Position = UDim2.new(0, 0, 0, 38)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(80, 155, 255)})
-			task.delay(0.12, function()
-				gsBox:CaptureFocus()
-			end)
+			task.delay(0.12, function() gsBox:CaptureFocus() end)
 		else
-			tw(globalSearchOverlay, 0.17, {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 28)})
-			tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(105, 105, 118)})
-			task.delay(0.19, function()
-				globalSearchOverlay.Visible = false
-			end)
+			tw(globalSearchOverlay, 0.17, {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 28)}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+			tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(102, 102, 116)})
+			task.delay(0.19, function() globalSearchOverlay.Visible = false end)
 		end
 	end)
 
@@ -431,38 +415,33 @@ function Library:Create(config)
 		for _, v in pairs(gsResults:GetChildren()) do
 			if v:IsA("TextButton") or v:IsA("Frame") then v:Destroy() end
 		end
-
 		local query = gsBox.Text:lower()
 		local count = 0
-
 		if query == "" then
 			gsNoResults.Visible = false
 			gsResults.CanvasSize = UDim2.new(0, 0, 0, 0)
 			return
 		end
-
 		for _, entry in pairs(allElements) do
 			if entry.name:lower():find(query, 1, true) then
 				count = count + 1
-
 				local row = Instance.new("TextButton")
 				row.Font = Enum.Font.SourceSans
 				row.Text = ""
 				row.AutoButtonColor = false
 				row.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				row.BackgroundTransparency = 1
 				row.BorderSizePixel = 0
 				row.Size = UDim2.new(1, 0, 0, 36)
+				row.Position = UDim2.new(0, 14, 0, 0)
 				row.ZIndex = 22
-
 				local rowCorner = Instance.new("UICorner")
 				rowCorner.CornerRadius = UDim.new(0, 6)
 				rowCorner.Parent = row
-
 				local rowStroke = Instance.new("UIStroke")
 				rowStroke.Color = Color3.fromRGB(40, 40, 52)
 				rowStroke.Thickness = 1
 				rowStroke.Parent = row
-
 				local rowName = Instance.new("TextLabel")
 				rowName.Font = Enum.Font.GothamMedium
 				rowName.Text = entry.name
@@ -474,7 +453,6 @@ function Library:Create(config)
 				rowName.Size = UDim2.new(0.6, 0, 1, 0)
 				rowName.ZIndex = 23
 				rowName.Parent = row
-
 				local rowTab = Instance.new("TextLabel")
 				rowTab.Font = Enum.Font.Gotham
 				rowTab.Text = entry.tab
@@ -486,57 +464,55 @@ function Library:Create(config)
 				rowTab.Size = UDim2.new(1, -10, 1, 0)
 				rowTab.ZIndex = 23
 				rowTab.Parent = row
-
+				-- staggered slide-in
+				local delay = (count - 1) * 0.04
+				task.delay(delay, function()
+					if row and row.Parent then
+						tw(row, 0.2, {BackgroundTransparency = 0, Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+					end
+				end)
 				row.MouseEnter:Connect(function()
-					tw(row, 0.13, {BackgroundColor3 = Color3.fromRGB(32, 32, 40)})
-					tw(rowStroke, 0.13, {Color = Color3.fromRGB(55, 85, 150)})
+					tw(row, 0.12, {BackgroundColor3 = Color3.fromRGB(34, 34, 44)})
+					tw(rowStroke, 0.12, {Color = Color3.fromRGB(55, 85, 155)})
 				end)
 				row.MouseLeave:Connect(function()
-					tw(row, 0.13, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					tw(rowStroke, 0.13, {Color = Color3.fromRGB(40, 40, 52)})
+					tw(row, 0.12, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
+					tw(rowStroke, 0.12, {Color = Color3.fromRGB(40, 40, 52)})
 				end)
-
-				-- FIX: clicking a search result navigates to its tab and closes the search overlay
+				-- FIX: clicking fires the correct tab
 				local capturedEntry = entry
 				row.MouseButton1Click:Connect(function()
-					-- close search overlay
 					searchOpen = false
-					tw(globalSearchOverlay, 0.17, {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 28)})
-					tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(105, 105, 118)})
-					task.delay(0.19, function()
-						globalSearchOverlay.Visible = false
-					end)
-					-- fire the stored tab click handler
+					tw(globalSearchOverlay, 0.17, {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 28)}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+					tw(searchBtn, 0.15, {ImageColor3 = Color3.fromRGB(102, 102, 116)})
+					task.delay(0.19, function() globalSearchOverlay.Visible = false end)
 					if tabClickHandlers[capturedEntry.tab] then
 						tabClickHandlers[capturedEntry.tab]()
 					end
 				end)
-
 				row.Parent = gsResults
 			end
 		end
-
 		gsNoResults.Visible = count == 0
 		task.wait()
 		gsResults.CanvasSize = UDim2.new(0, 0, 0, gsResultList.AbsoluteContentSize.Y + 14)
 	end)
 
-	-- FIX: drag offset — account for AnchorPoint so the frame doesn't jump when grabbed
+	-- ── DRAG — fixed ──────────────────────────────────────────────────────────
+	-- AbsolutePosition is ALWAYS the top-left pixel corner of the frame,
+	-- regardless of AnchorPoint. So offset = mousePos - AbsolutePosition.
+	-- To set position we need the CENTER (because AnchorPoint = 0.5,0.5),
+	-- which is topLeft + size/2. Guard against accidental drags during open anim.
 	local dragging = false
-	local dragOffX = 0
-	local dragOffY = 0
+	local dragOffX, dragOffY = 0, 0
+	local openedAt = tick()
 
 	topBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			-- AbsolutePosition already accounts for anchor, so offset is simply mouse minus top-left corner
-			local topLeft = main.AbsolutePosition - Vector2.new(
-				main.AbsoluteSize.X * main.AnchorPoint.X,
-				main.AbsoluteSize.Y * main.AnchorPoint.Y
-			)
-			dragOffX = input.Position.X - topLeft.X
-			dragOffY = input.Position.Y - topLeft.Y
-		end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+		if tick() - openedAt < 0.45 then return end   -- wait for open anim
+		dragging = true
+		dragOffX = input.Position.X - main.AbsolutePosition.X
+		dragOffY = input.Position.Y - main.AbsolutePosition.Y
 	end)
 
 	topBar.InputEnded:Connect(function(input)
@@ -548,18 +524,15 @@ function Library:Create(config)
 	UserInputService.InputChanged:Connect(function(input)
 		if not dragging then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
-		local screenSize = arizon.AbsoluteSize
+		local sw = arizon.AbsoluteSize.X
+		local sh = arizon.AbsoluteSize.Y
 		local mw = main.AbsoluteSize.X
 		local mh = main.AbsoluteSize.Y
-		local rawX = input.Position.X - dragOffX
-		local rawY = input.Position.Y - dragOffY
-		local clampedX = math.clamp(rawX, 0, screenSize.X - mw)
-		local clampedY = math.clamp(rawY, 0, screenSize.Y - mh)
-		-- position is offset from top-left; add anchor offset back for UDim2
-		local finalX = clampedX + mw * main.AnchorPoint.X
-		local finalY = clampedY + mh * main.AnchorPoint.Y
-		main.Position = UDim2.fromOffset(finalX, finalY)
-		shadow.Position = UDim2.fromOffset(finalX, finalY)
+		-- top-left corner clamped to screen
+		local tlX = math.clamp(input.Position.X - dragOffX, 0, sw - mw)
+		local tlY = math.clamp(input.Position.Y - dragOffY, 0, sh - mh)
+		-- stored position must be the CENTER because AnchorPoint = (0.5, 0.5)
+		main.Position = UDim2.fromOffset(tlX + mw * 0.5, tlY + mh * 0.5)
 	end)
 
 	UserInputService.InputEnded:Connect(function(input)
@@ -567,6 +540,8 @@ function Library:Create(config)
 			dragging = false
 		end
 	end)
+
+	-- ── FIRST TAB AUTO-ACTIVATE ───────────────────────────────────────────────
 
 	local firstTabDone = false
 	tabScroll.ChildAdded:Connect(function(child)
@@ -582,9 +557,7 @@ function Library:Create(config)
 					if bar then
 						tw(bar, 0.24, {BackgroundTransparency = 0})
 						local bs = bar:FindFirstChildWhichIsA("UIStroke")
-						if bs then
-							pulse(bar, bs)
-						end
+						if bs then pulse(bar, bs) end
 					end
 				end
 			end)
@@ -602,10 +575,10 @@ function Library:Create(config)
 					local sec = v:FindFirstChild("section")
 					if sec then
 						local list = sec:FindFirstChild("uIListLayout1")
-						local pad = sec:FindFirstChild("uIPadding")
+						local pad  = sec:FindFirstChild("uIPadding")
 						if list and pad then
-							local total = list.AbsoluteContentSize.Y + pad.PaddingBottom.Offset + pad.PaddingTop.Offset
-							v.CanvasSize = UDim2.new(0, 0, 0, total)
+							v.CanvasSize = UDim2.new(0, 0, 0,
+								list.AbsoluteContentSize.Y + pad.PaddingBottom.Offset + pad.PaddingTop.Offset)
 						end
 					end
 				end
@@ -613,15 +586,14 @@ function Library:Create(config)
 		end
 	end)
 
+	-- ── TAB HANDLER ───────────────────────────────────────────────────────────
+
 	local tabHandler = {}
 
 	function tabHandler:Exit()
-		tw(main, 0.26, {BackgroundTransparency = 1})
-		tw(shadow, 0.26, {ImageTransparency = 1})
-		twSpring(main, 0.26, {Size = UDim2.fromOffset(MAIN_W, 0)})
-		task.delay(0.3, function()
-			arizon:Destroy()
-		end)
+		tw(main, 0.24, {BackgroundTransparency = 1, Position = UDim2.new(0.5, 0, 0.58, 0)}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+		tw(mainStroke, 0.14, {Transparency = 1})
+		task.delay(0.27, function() arizon:Destroy() end)
 	end
 
 	function tabHandler:Tab(tabName)
@@ -629,7 +601,7 @@ function Library:Create(config)
 		tabBtn.Name = "textButton4"
 		tabBtn.Font = Enum.Font.GothamMedium
 		tabBtn.Text = tabName
-		tabBtn.TextColor3 = Color3.fromRGB(150, 150, 165)
+		tabBtn.TextColor3 = Color3.fromRGB(148, 148, 164)
 		tabBtn.TextSize = 12
 		tabBtn.TextTransparency = 0.5
 		tabBtn.TextXAlignment = Enum.TextXAlignment.Left
@@ -642,7 +614,7 @@ function Library:Create(config)
 		tabBtnCorner.CornerRadius = UDim.new(0, 6)
 		tabBtnCorner.Parent = tabBtn
 
-		-- FIX: push text right enough so the active bar (3px wide + 3px margin = 6px) never overlaps it
+		-- FIX: PaddingLeft 18 keeps text right of the 2px active bar at x=3
 		local tabBtnPad = Instance.new("UIPadding")
 		tabBtnPad.PaddingLeft = UDim.new(0, 18)
 		tabBtnPad.Parent = tabBtn
@@ -654,9 +626,7 @@ function Library:Create(config)
 		activeBar.Position = UDim2.new(0, 3, 0.5, -8)
 		activeBar.Size = UDim2.fromOffset(2, 16)
 		activeBar.BackgroundTransparency = 1
-		-- FIX: give the bar a higher ZIndex so it draws on top of everything inside the button,
-		-- but it is only 2px wide so it no longer sits under the text now that padding is 18px.
-		activeBar.ZIndex = tabBtn.ZIndex + 1
+		activeBar.ZIndex = tabBtn.ZIndex + 2
 
 		local activeBarCorner = Instance.new("UICorner")
 		activeBarCorner.CornerRadius = UDim.new(1, 0)
@@ -672,7 +642,7 @@ function Library:Create(config)
 
 		local container = Instance.new("ScrollingFrame")
 		container.Name = "container"
-		container.ScrollBarImageColor3 = Color3.fromRGB(52, 52, 64)
+		container.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 62)
 		container.ScrollBarThickness = 2
 		container.Active = true
 		container.BackgroundTransparency = 1
@@ -693,49 +663,42 @@ function Library:Create(config)
 
 		tabBtn.MouseEnter:Connect(function()
 			if tabBtn.TextTransparency > 0.05 then
-				tw(tabBtn, 0.14, {BackgroundTransparency = 0.88, TextColor3 = Color3.fromRGB(178, 178, 192)})
+				tw(tabBtn, 0.14, {BackgroundTransparency = 0.88, TextColor3 = Color3.fromRGB(178, 178, 194)})
 			end
 		end)
-
 		tabBtn.MouseLeave:Connect(function()
 			if tabBtn.TextTransparency > 0.05 then
-				tw(tabBtn, 0.14, {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(150, 150, 165)})
+				tw(tabBtn, 0.14, {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(148, 148, 164)})
 			end
 		end)
 
-		-- FIX: store the click logic in tabClickHandlers so search results can invoke it
 		local function doTabClick()
 			for _, v in pairs(main:GetChildren()) do
-				if v.Name == "container" then
-					v.Visible = false
-				end
+				if v.Name == "container" then v.Visible = false end
 			end
 			for _, v in pairs(tabScroll:GetChildren()) do
 				if v:IsA("TextButton") then
-					tw(v, 0.2, {TextTransparency = 0.5, BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(38, 38, 46), TextColor3 = Color3.fromRGB(150, 150, 165)})
+					tw(v, 0.18, {TextTransparency = 0.5, BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(38, 38, 46), TextColor3 = Color3.fromRGB(148, 148, 164)})
 					local b = v:FindFirstChild("activeBar")
 					if b then
-						tw(b, 0.16, {BackgroundTransparency = 1})
+						tw(b, 0.14, {BackgroundTransparency = 1})
 						local bs = b:FindFirstChildWhichIsA("UIStroke")
-						if bs then tw(bs, 0.16, {Thickness = 0}) end
+						if bs then tw(bs, 0.14, {Thickness = 0}) end
 					end
 				end
 			end
-
 			container.Visible = true
-			container.Position = UDim2.new(0, 10, 0, 38)
-			tw(container, 0.2, {Position = UDim2.new(0, 0, 0, 38)})
-
+			container.Position = UDim2.new(0, 14, 0, 38)
+			tw(container, 0.24, {Position = UDim2.new(0, 0, 0, 38)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			tw(tabBtn, 0.2, {TextTransparency = 0, BackgroundTransparency = 0.84, BackgroundColor3 = Color3.fromRGB(34, 54, 90), TextColor3 = Color3.fromRGB(210, 210, 220)})
 			tw(activeBar, 0.18, {BackgroundTransparency = 0})
 			pulse(activeBar, activeBarStroke)
 		end
 
 		tabClickHandlers[tabName] = doTabClick
+		tabBtn.MouseButton1Click:Connect(doTabClick)
 
-		tabBtn.MouseButton1Click:Connect(function()
-			doTabClick()
-		end)
+		-- ── SECTION ───────────────────────────────────────────────────────────
 
 		local sectionHandler = {}
 
@@ -769,7 +732,7 @@ function Library:Create(config)
 			local secTitleLbl = Instance.new("TextLabel")
 			secTitleLbl.Font = Enum.Font.GothamBold
 			secTitleLbl.Text = sectionTitle:upper()
-			secTitleLbl.TextColor3 = Color3.fromRGB(82, 82, 102)
+			secTitleLbl.TextColor3 = Color3.fromRGB(78, 78, 98)
 			secTitleLbl.TextSize = 9
 			secTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
 			secTitleLbl.BackgroundTransparency = 1
@@ -788,13 +751,13 @@ function Library:Create(config)
 			local elemCount = 0
 
 			local function animIn(elem, delay)
-				elem.Position = UDim2.new(0, -8, 0, 0)
+				elem.Position = UDim2.new(0, -12, 0, 0)
 				local origTransp = elem.BackgroundTransparency
 				elem.BackgroundTransparency = 1
 				task.delay(delay, function()
 					if elem and elem.Parent then
-						tw(elem, 0.2, {Position = UDim2.new(0, 0, 0, 0)})
-						tw(elem, 0.16, {BackgroundTransparency = origTransp == 1 and 1 or 0})
+						tw(elem, 0.24, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+						tw(elem, 0.18, {BackgroundTransparency = origTransp == 1 and 1 or 0})
 					end
 				end)
 			end
@@ -805,40 +768,32 @@ function Library:Create(config)
 				elemCount = elemCount + 1
 				local lf = Instance.new("Frame")
 				lf.Name = "label"
-				lf.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				lf.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				lf.BorderSizePixel = 0
 				lf.Size = UDim2.new(1, 0, 0, 34)
-
 				local lfc = Instance.new("UICorner")
-				lfc.CornerRadius = UDim.new(0, 6)
+				lfc.CornerRadius = UDim.new(0, 7)
 				lfc.Parent = lf
-
 				local lfs = Instance.new("UIStroke")
-				lfs.Color = Color3.fromRGB(40, 40, 50)
+				lfs.Color = Color3.fromRGB(38, 38, 48)
 				lfs.Thickness = 1
 				lfs.Parent = lf
-
 				local lt = Instance.new("TextLabel")
 				lt.Name = "title4"
 				lt.Font = Enum.Font.GothamMedium
 				lt.Text = labelTitle
-				lt.TextColor3 = Color3.fromRGB(162, 162, 176)
+				lt.TextColor3 = Color3.fromRGB(158, 158, 172)
 				lt.TextSize = 11
 				lt.TextXAlignment = Enum.TextXAlignment.Left
 				lt.BackgroundTransparency = 1
 				lt.Position = UDim2.new(0, 10, 0, 0)
 				lt.Size = UDim2.new(1, -20, 1, 0)
 				lt.Parent = lf
-
 				lf.Parent = section
 				animIn(lf, elemCount * 0.045)
-
 				table.insert(allElements, {name = labelTitle, tab = tabName})
-
 				local Label = {}
-				function Label:Set(text)
-					lt.Text = text
-				end
+				function Label:Set(text) lt.Text = text end
 				return Label
 			end
 
@@ -846,131 +801,114 @@ function Library:Create(config)
 				btnTitle = btnTitle or "Button"
 				callback = callback or function() end
 				elemCount = elemCount + 1
-
 				local bf = Instance.new("TextButton")
 				bf.Name = "uIButton"
 				bf.Font = Enum.Font.SourceSans
 				bf.Text = ""
 				bf.AutoButtonColor = false
-				bf.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				bf.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				bf.BorderSizePixel = 0
 				bf.Size = UDim2.new(1, 0, 0, 34)
-
 				local bfc = Instance.new("UICorner")
-				bfc.CornerRadius = UDim.new(0, 6)
+				bfc.CornerRadius = UDim.new(0, 7)
 				bfc.Parent = bf
-
 				local bfs = Instance.new("UIStroke")
-				bfs.Color = Color3.fromRGB(40, 40, 50)
+				bfs.Color = Color3.fromRGB(38, 38, 48)
 				bfs.Thickness = 1
 				bfs.Parent = bf
-
 				local bft = Instance.new("TextLabel")
 				bft.Font = Enum.Font.GothamMedium
 				bft.Text = btnTitle
-				bft.TextColor3 = Color3.fromRGB(186, 186, 198)
+				bft.TextColor3 = Color3.fromRGB(182, 182, 196)
 				bft.TextSize = 11
 				bft.TextXAlignment = Enum.TextXAlignment.Left
 				bft.BackgroundTransparency = 1
 				bft.Position = UDim2.new(0, 10, 0, 0)
 				bft.Size = UDim2.new(1, -34, 1, 0)
 				bft.Parent = bf
-
 				local bfa = Instance.new("ImageLabel")
 				bfa.Image = "rbxassetid://6034818379"
-				bfa.ImageColor3 = Color3.fromRGB(68, 68, 82)
+				bfa.ImageColor3 = Color3.fromRGB(65, 65, 80)
 				bfa.BackgroundTransparency = 1
 				bfa.Position = UDim2.new(1, -24, 0.5, -8)
 				bfa.Size = UDim2.fromOffset(16, 16)
 				bfa.Rotation = -90
 				bfa.Parent = bf
-
 				bf.Parent = section
 				animIn(bf, elemCount * 0.045)
-
 				table.insert(allElements, {name = btnTitle, tab = tabName})
-
 				bf.MouseEnter:Connect(function()
-					tw(bf, 0.14, {BackgroundColor3 = Color3.fromRGB(32, 32, 38)})
-					tw(bfs, 0.14, {Color = Color3.fromRGB(56, 56, 70)})
-					tw(bfa, 0.14, {ImageColor3 = Color3.fromRGB(96, 96, 114)})
+					tw(bf, 0.13, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
+					tw(bfs, 0.13, {Color = Color3.fromRGB(52, 52, 66)})
+					tw(bfa, 0.13, {ImageColor3 = Color3.fromRGB(90, 90, 108)})
 				end)
 				bf.MouseLeave:Connect(function()
-					tw(bf, 0.14, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					tw(bfs, 0.14, {Color = Color3.fromRGB(40, 40, 50)})
-					tw(bfa, 0.14, {ImageColor3 = Color3.fromRGB(68, 68, 82)})
+					tw(bf, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)})
+					tw(bfs, 0.13, {Color = Color3.fromRGB(38, 38, 48)})
+					tw(bfa, 0.13, {ImageColor3 = Color3.fromRGB(65, 65, 80)})
 				end)
 				bf.MouseButton1Down:Connect(function()
-					tw(bf, 0.08, {BackgroundColor3 = Color3.fromRGB(20, 20, 26)})
-					tw(bft, 0.08, {TextColor3 = Color3.fromRGB(75, 148, 255)})
+					tw(bf, 0.07, {BackgroundColor3 = Color3.fromRGB(18, 18, 24)})
+					tw(bft, 0.07, {TextColor3 = Color3.fromRGB(75, 148, 255)})
+					twSpring(bf, 0.14, {Size = UDim2.new(1, 0, 0, 31)})
 				end)
 				bf.MouseButton1Up:Connect(function()
-					tw(bf, 0.14, {BackgroundColor3 = Color3.fromRGB(32, 32, 38)})
-					tw(bft, 0.18, {TextColor3 = Color3.fromRGB(186, 186, 198)})
+					tw(bf, 0.13, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
+					tw(bft, 0.18, {TextColor3 = Color3.fromRGB(182, 182, 196)})
+					twSpring(bf, 0.22, {Size = UDim2.new(1, 0, 0, 34)})
 					ripple(bf, Mouse.X, Mouse.Y)
 				end)
-				bf.MouseButton1Click:Connect(function()
-					callback()
-				end)
+				bf.MouseButton1Click:Connect(function() callback() end)
 			end
 
 			function elementHandler:Toggle(togTitle, callback)
 				togTitle = togTitle or "Toggle"
 				callback = callback or function() end
 				elemCount = elemCount + 1
-
 				local tf = Instance.new("TextButton")
 				tf.Name = "textButton1"
 				tf.Font = Enum.Font.SourceSans
 				tf.Text = ""
 				tf.AutoButtonColor = false
-				tf.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				tf.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				tf.BorderSizePixel = 0
 				tf.Size = UDim2.new(1, 0, 0, 34)
-
 				local tfc = Instance.new("UICorner")
-				tfc.CornerRadius = UDim.new(0, 6)
+				tfc.CornerRadius = UDim.new(0, 7)
 				tfc.Parent = tf
-
 				local tfs = Instance.new("UIStroke")
-				tfs.Color = Color3.fromRGB(40, 40, 50)
+				tfs.Color = Color3.fromRGB(38, 38, 48)
 				tfs.Thickness = 1
 				tfs.Parent = tf
-
 				local tft = Instance.new("TextLabel")
 				tft.Font = Enum.Font.GothamMedium
 				tft.Text = togTitle
-				tft.TextColor3 = Color3.fromRGB(186, 186, 198)
+				tft.TextColor3 = Color3.fromRGB(182, 182, 196)
 				tft.TextSize = 11
 				tft.TextXAlignment = Enum.TextXAlignment.Left
 				tft.BackgroundTransparency = 1
 				tft.Position = UDim2.new(0, 10, 0, 0)
 				tft.Size = UDim2.new(1, -56, 1, 0)
 				tft.Parent = tf
-
 				local switchBg = Instance.new("Frame")
-				switchBg.BackgroundColor3 = Color3.fromRGB(36, 36, 44)
+				switchBg.BackgroundColor3 = Color3.fromRGB(34, 34, 42)
 				switchBg.BorderSizePixel = 0
 				switchBg.Position = UDim2.new(1, -46, 0.5, -11)
 				switchBg.Size = UDim2.fromOffset(36, 22)
 				switchBg.ClipsDescendants = true
-
 				local switchBgCorner = Instance.new("UICorner")
 				switchBgCorner.CornerRadius = UDim.new(1, 0)
 				switchBgCorner.Parent = switchBg
-
 				local switchBgStroke = Instance.new("UIStroke")
-				switchBgStroke.Color = Color3.fromRGB(52, 52, 64)
+				switchBgStroke.Color = Color3.fromRGB(50, 50, 62)
 				switchBgStroke.Thickness = 1
 				switchBgStroke.Parent = switchBg
-
 				local knob = Instance.new("Frame")
-				knob.BackgroundColor3 = Color3.fromRGB(108, 108, 124)
+				knob.BackgroundColor3 = Color3.fromRGB(105, 105, 122)
 				knob.BorderSizePixel = 0
 				knob.AnchorPoint = Vector2.new(0, 0.5)
 				knob.Position = UDim2.new(0, 3, 0.5, 0)
 				knob.Size = UDim2.fromOffset(16, 16)
-
 				local knobCorner = Instance.new("UICorner")
 				knobCorner.CornerRadius = UDim.new(1, 0)
 				knobCorner.Parent = knob
@@ -978,18 +916,15 @@ function Library:Create(config)
 				switchBg.Parent = tf
 				tf.Parent = section
 				animIn(tf, elemCount * 0.045)
-
 				table.insert(allElements, {name = togTitle, tab = tabName})
-
 				local togState = false
-
 				tf.MouseEnter:Connect(function()
-					tw(tf, 0.14, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
-					tw(tfs, 0.14, {Color = Color3.fromRGB(56, 56, 68)})
+					tw(tf, 0.13, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)})
+					tw(tfs, 0.13, {Color = Color3.fromRGB(52, 52, 64)})
 				end)
 				tf.MouseLeave:Connect(function()
-					tw(tf, 0.14, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					tw(tfs, 0.14, {Color = Color3.fromRGB(40, 40, 50)})
+					tw(tf, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)})
+					tw(tfs, 0.13, {Color = Color3.fromRGB(38, 38, 48)})
 				end)
 				tf.MouseButton1Click:Connect(function()
 					togState = not togState
@@ -998,11 +933,11 @@ function Library:Create(config)
 					if togState then
 						tw(switchBg, 0.2, {BackgroundColor3 = Color3.fromRGB(26, 84, 188)})
 						tw(switchBgStroke, 0.2, {Color = Color3.fromRGB(50, 125, 240)})
-						twSpring(knob, 0.3, {Position = UDim2.new(0, 17, 0.5, 0), BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+						twSpring(knob, 0.32, {Position = UDim2.new(0, 17, 0.5, 0), BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
 					else
-						tw(switchBg, 0.2, {BackgroundColor3 = Color3.fromRGB(36, 36, 44)})
-						tw(switchBgStroke, 0.2, {Color = Color3.fromRGB(52, 52, 64)})
-						twSpring(knob, 0.3, {Position = UDim2.new(0, 3, 0.5, 0), BackgroundColor3 = Color3.fromRGB(108, 108, 124)})
+						tw(switchBg, 0.2, {BackgroundColor3 = Color3.fromRGB(34, 34, 42)})
+						tw(switchBgStroke, 0.2, {Color = Color3.fromRGB(50, 50, 62)})
+						twSpring(knob, 0.32, {Position = UDim2.new(0, 3, 0.5, 0), BackgroundColor3 = Color3.fromRGB(105, 105, 122)})
 					end
 				end)
 			end
@@ -1011,58 +946,49 @@ function Library:Create(config)
 				tbTitle = tbTitle or "Textbox"
 				callback = callback or function() end
 				elemCount = elemCount + 1
-
 				local xf = Instance.new("Frame")
 				xf.Name = "textbox"
-				xf.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				xf.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				xf.BorderSizePixel = 0
 				xf.Size = UDim2.new(1, 0, 0, 34)
-
 				local xfc = Instance.new("UICorner")
-				xfc.CornerRadius = UDim.new(0, 6)
+				xfc.CornerRadius = UDim.new(0, 7)
 				xfc.Parent = xf
-
 				local xfs = Instance.new("UIStroke")
-				xfs.Color = Color3.fromRGB(40, 40, 50)
+				xfs.Color = Color3.fromRGB(38, 38, 48)
 				xfs.Thickness = 1
 				xfs.Parent = xf
-
 				local xft = Instance.new("TextLabel")
 				xft.Font = Enum.Font.GothamMedium
 				xft.Text = tbTitle
-				xft.TextColor3 = Color3.fromRGB(186, 186, 198)
+				xft.TextColor3 = Color3.fromRGB(182, 182, 196)
 				xft.TextSize = 11
 				xft.TextXAlignment = Enum.TextXAlignment.Left
 				xft.BackgroundTransparency = 1
 				xft.Position = UDim2.new(0, 10, 0, 0)
 				xft.Size = UDim2.fromOffset(130, 34)
 				xft.Parent = xf
-
 				local inputWrap = Instance.new("Frame")
-				inputWrap.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+				inputWrap.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 				inputWrap.BorderSizePixel = 0
 				inputWrap.Position = UDim2.new(1, -120, 0.5, -13)
 				inputWrap.Size = UDim2.fromOffset(108, 26)
-
 				local inputWrapCorner = Instance.new("UICorner")
 				inputWrapCorner.CornerRadius = UDim.new(0, 5)
 				inputWrapCorner.Parent = inputWrap
-
 				local inputWrapStroke = Instance.new("UIStroke")
-				inputWrapStroke.Color = Color3.fromRGB(46, 46, 58)
+				inputWrapStroke.Color = Color3.fromRGB(44, 44, 56)
 				inputWrapStroke.Thickness = 1
 				inputWrapStroke.Parent = inputWrap
-
 				local inputBox = Instance.new("TextBox")
 				inputBox.Font = Enum.Font.Gotham
-				inputBox.PlaceholderColor3 = Color3.fromRGB(72, 72, 90)
+				inputBox.PlaceholderColor3 = Color3.fromRGB(68, 68, 86)
 				inputBox.PlaceholderText = "Enter value..."
 				inputBox.Text = ""
-				inputBox.TextColor3 = Color3.fromRGB(198, 198, 212)
+				inputBox.TextColor3 = Color3.fromRGB(195, 195, 210)
 				inputBox.TextSize = 11
 				inputBox.BackgroundTransparency = 1
 				inputBox.Size = UDim2.fromScale(1, 1)
-
 				local inputPad = Instance.new("UIPadding")
 				inputPad.PaddingLeft = UDim.new(0, 7)
 				inputPad.PaddingRight = UDim.new(0, 7)
@@ -1071,61 +997,54 @@ function Library:Create(config)
 				inputWrap.Parent = xf
 				xf.Parent = section
 				animIn(xf, elemCount * 0.045)
-
 				table.insert(allElements, {name = tbTitle, tab = tabName})
-
 				xf.MouseEnter:Connect(function()
-					tw(xf, 0.14, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
-					tw(xfs, 0.14, {Color = Color3.fromRGB(56, 56, 68)})
+					tw(xf, 0.13, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)})
+					tw(xfs, 0.13, {Color = Color3.fromRGB(52, 52, 64)})
 				end)
 				xf.MouseLeave:Connect(function()
-					tw(xf, 0.14, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					tw(xfs, 0.14, {Color = Color3.fromRGB(40, 40, 50)})
+					tw(xf, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)})
+					tw(xfs, 0.13, {Color = Color3.fromRGB(38, 38, 48)})
 				end)
 				inputBox.Focused:Connect(function()
 					tw(inputWrapStroke, 0.16, {Color = Color3.fromRGB(70, 140, 255)})
+					twSpring(inputWrap, 0.2, {Size = UDim2.fromOffset(110, 26)})
 				end)
 				inputBox.FocusLost:Connect(function()
-					tw(inputWrapStroke, 0.16, {Color = Color3.fromRGB(46, 46, 58)})
+					tw(inputWrapStroke, 0.16, {Color = Color3.fromRGB(44, 44, 56)})
+					twSpring(inputWrap, 0.2, {Size = UDim2.fromOffset(108, 26)})
 					callback(inputBox.Text)
 				end)
 			end
 
 			function elementHandler:Slider(slTitle, sMin, sMax, sStart, sInc, callback)
 				slTitle = slTitle or "Slider"
-				sMin = sMin or 0
-				sMax = sMax or 100
-				sStart = sStart or sMin
-				sInc = sInc or 1
+				sMin = sMin or 0; sMax = sMax or 100
+				sStart = sStart or sMin; sInc = sInc or 1
 				callback = callback or function() end
 				elemCount = elemCount + 1
-
 				local sf = Instance.new("Frame")
 				sf.Name = "slider"
-				sf.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				sf.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				sf.BorderSizePixel = 0
 				sf.Size = UDim2.new(1, 0, 0, 34)
-
 				local sfc = Instance.new("UICorner")
-				sfc.CornerRadius = UDim.new(0, 6)
+				sfc.CornerRadius = UDim.new(0, 7)
 				sfc.Parent = sf
-
 				local sfs = Instance.new("UIStroke")
-				sfs.Color = Color3.fromRGB(40, 40, 50)
+				sfs.Color = Color3.fromRGB(38, 38, 48)
 				sfs.Thickness = 1
 				sfs.Parent = sf
-
 				local sft = Instance.new("TextLabel")
 				sft.Font = Enum.Font.GothamMedium
 				sft.Text = slTitle
-				sft.TextColor3 = Color3.fromRGB(186, 186, 198)
+				sft.TextColor3 = Color3.fromRGB(182, 182, 196)
 				sft.TextSize = 11
 				sft.TextXAlignment = Enum.TextXAlignment.Left
 				sft.BackgroundTransparency = 1
 				sft.Position = UDim2.new(0, 10, 0, 0)
 				sft.Size = UDim2.fromOffset(110, 34)
 				sft.Parent = sf
-
 				local valLbl = Instance.new("TextLabel")
 				valLbl.Name = "value"
 				valLbl.Font = Enum.Font.GothamMedium
@@ -1136,29 +1055,24 @@ function Library:Create(config)
 				valLbl.Position = UDim2.new(1, -106, 0, 0)
 				valLbl.Size = UDim2.fromOffset(38, 34)
 				valLbl.Parent = sf
-
 				local track = Instance.new("Frame")
 				track.Name = "bar"
-				track.BackgroundColor3 = Color3.fromRGB(38, 38, 48)
+				track.BackgroundColor3 = Color3.fromRGB(36, 36, 46)
 				track.BorderSizePixel = 0
 				track.Position = UDim2.new(1, -108, 0.5, -3)
 				track.Size = UDim2.fromOffset(56, 5)
-
 				local trackCorner = Instance.new("UICorner")
 				trackCorner.CornerRadius = UDim.new(1, 0)
 				trackCorner.Parent = track
-
 				local fill = Instance.new("Frame")
 				fill.Name = "progressBar"
 				fill.BackgroundColor3 = Color3.fromRGB(70, 140, 255)
 				fill.BorderSizePixel = 0
 				fill.Size = UDim2.fromOffset(0, 5)
-
 				local fillCorner = Instance.new("UICorner")
 				fillCorner.CornerRadius = UDim.new(1, 0)
 				fillCorner.Parent = fill
 				fill.Parent = track
-
 				local knob = Instance.new("Frame")
 				knob.Name = "knob"
 				knob.BackgroundColor3 = Color3.fromRGB(196, 216, 255)
@@ -1166,11 +1080,9 @@ function Library:Create(config)
 				knob.AnchorPoint = Vector2.new(0.5, 0.5)
 				knob.Position = UDim2.new(0, 0, 0.5, 0)
 				knob.Size = UDim2.fromOffset(11, 11)
-
 				local knobCorner = Instance.new("UICorner")
 				knobCorner.CornerRadius = UDim.new(1, 0)
 				knobCorner.Parent = knob
-
 				local knobStroke = Instance.new("UIStroke")
 				knobStroke.Color = Color3.fromRGB(70, 140, 255)
 				knobStroke.Thickness = 1.5
@@ -1179,12 +1091,9 @@ function Library:Create(config)
 				track.Parent = sf
 				sf.Parent = section
 				animIn(sf, elemCount * 0.045)
-
 				table.insert(allElements, {name = slTitle, tab = tabName})
-
 				local Slider = {Value = sStart}
 				local slDragging = false
-
 				local function setSlider(val)
 					val = math.clamp(math.round(val / sInc) * sInc, sMin, sMax)
 					local scale = (val - sMin) / (sMax - sMin)
@@ -1194,46 +1103,37 @@ function Library:Create(config)
 					Slider.Value = val
 					callback(val)
 				end
-
 				local function inputToVal(inputX)
 					local rel = math.clamp((inputX - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
 					return sMin + rel * (sMax - sMin)
 				end
-
 				track.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						slDragging = true
 						setSlider(inputToVal(input.Position.X))
-						tw(knob, 0.13, {Size = UDim2.fromOffset(14, 14)})
+						twSpring(knob, 0.18, {Size = UDim2.fromOffset(14, 14)})
 					end
 				end)
-
 				UserInputService.InputChanged:Connect(function(input)
 					if slDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 						setSlider(inputToVal(input.Position.X))
 					end
 				end)
-
 				UserInputService.InputEnded:Connect(function(input)
 					if slDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 						slDragging = false
-						tw(knob, 0.13, {Size = UDim2.fromOffset(11, 11)})
+						twSpring(knob, 0.18, {Size = UDim2.fromOffset(11, 11)})
 					end
 				end)
-
 				sf.MouseEnter:Connect(function()
-					tw(sf, 0.14, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
-					tw(sfs, 0.14, {Color = Color3.fromRGB(56, 56, 68)})
+					tw(sf, 0.13, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)})
+					tw(sfs, 0.13, {Color = Color3.fromRGB(52, 52, 64)})
 				end)
 				sf.MouseLeave:Connect(function()
-					tw(sf, 0.14, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					tw(sfs, 0.14, {Color = Color3.fromRGB(40, 40, 50)})
+					tw(sf, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)})
+					tw(sfs, 0.13, {Color = Color3.fromRGB(38, 38, 48)})
 				end)
-
-				function Slider:Set(val)
-					setSlider(val)
-				end
-
+				function Slider:Set(val) setSlider(val) end
 				setSlider(sStart)
 				return Slider
 			end
@@ -1243,29 +1143,23 @@ function Library:Create(config)
 				ddList = ddList or {}
 				callback = callback or function() end
 				elemCount = elemCount + 1
-
 				local selectedValue = ddDef
-
 				local df = Instance.new("Frame")
 				df.Name = "dropdown"
 				df.AutomaticSize = Enum.AutomaticSize.Y
-				df.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+				df.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
 				df.BorderSizePixel = 0
 				df.Size = UDim2.new(1, 0, 0, 34)
-
 				local dfc = Instance.new("UICorner")
-				dfc.CornerRadius = UDim.new(0, 6)
+				dfc.CornerRadius = UDim.new(0, 7)
 				dfc.Parent = df
-
 				local dfs = Instance.new("UIStroke")
-				dfs.Color = Color3.fromRGB(40, 40, 50)
+				dfs.Color = Color3.fromRGB(38, 38, 48)
 				dfs.Thickness = 1
 				dfs.Parent = df
-
 				local dfMainList = Instance.new("UIListLayout")
 				dfMainList.SortOrder = Enum.SortOrder.LayoutOrder
 				dfMainList.Parent = df
-
 				local dfHeader = Instance.new("TextButton")
 				dfHeader.Font = Enum.Font.SourceSans
 				dfHeader.Text = ""
@@ -1273,36 +1167,31 @@ function Library:Create(config)
 				dfHeader.BackgroundTransparency = 1
 				dfHeader.LayoutOrder = 0
 				dfHeader.Size = UDim2.new(1, 0, 0, 34)
-
 				local dfTitle = Instance.new("TextLabel")
 				dfTitle.Font = Enum.Font.GothamMedium
 				dfTitle.Text = ddText .. (ddDef and (" — " .. tostring(ddDef)) or "")
-				dfTitle.TextColor3 = Color3.fromRGB(186, 186, 198)
+				dfTitle.TextColor3 = Color3.fromRGB(182, 182, 196)
 				dfTitle.TextSize = 11
 				dfTitle.TextXAlignment = Enum.TextXAlignment.Left
 				dfTitle.BackgroundTransparency = 1
 				dfTitle.Position = UDim2.new(0, 10, 0, 0)
 				dfTitle.Size = UDim2.new(1, -36, 1, 0)
 				dfTitle.Parent = dfHeader
-
 				local chevron = Instance.new("ImageLabel")
 				chevron.Image = "rbxassetid://6034818379"
-				chevron.ImageColor3 = Color3.fromRGB(75, 75, 92)
+				chevron.ImageColor3 = Color3.fromRGB(72, 72, 90)
 				chevron.BackgroundTransparency = 1
 				chevron.Position = UDim2.new(1, -24, 0.5, -8)
 				chevron.Size = UDim2.fromOffset(16, 16)
 				chevron.Parent = dfHeader
-
 				dfHeader.Parent = df
-
 				local divLine = Instance.new("Frame")
-				divLine.BackgroundColor3 = Color3.fromRGB(36, 36, 46)
+				divLine.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
 				divLine.BorderSizePixel = 0
 				divLine.LayoutOrder = 1
 				divLine.Size = UDim2.new(1, 0, 0, 1)
 				divLine.Visible = false
 				divLine.Parent = df
-
 				local optHolder = Instance.new("Frame")
 				optHolder.Name = "dropdownHolder"
 				optHolder.AutomaticSize = Enum.AutomaticSize.Y
@@ -1311,28 +1200,22 @@ function Library:Create(config)
 				optHolder.Size = UDim2.new(1, 0, 0, 0)
 				optHolder.Visible = false
 				optHolder.ClipsDescendants = false
-
 				local optList = Instance.new("UIListLayout")
 				optList.Padding = UDim.new(0, 2)
 				optList.SortOrder = Enum.SortOrder.LayoutOrder
 				optList.Parent = optHolder
-
 				local optPad = Instance.new("UIPadding")
 				optPad.PaddingTop = UDim.new(0, 5)
 				optPad.PaddingBottom = UDim.new(0, 7)
 				optPad.PaddingLeft = UDim.new(0, 7)
 				optPad.PaddingRight = UDim.new(0, 7)
 				optPad.Parent = optHolder
-
 				optHolder.Parent = df
 				df.Parent = section
 				animIn(df, elemCount * 0.045)
-
 				table.insert(allElements, {name = ddText, tab = tabName})
-
 				local Dropdown = {Value = ddDef, Toggled = false, Options = ddList}
 				local optButtons = {}
-
 				local function refreshChecks()
 					for _, entry in pairs(optButtons) do
 						local isSel = entry.value == selectedValue
@@ -1341,24 +1224,23 @@ function Library:Create(config)
 							tw(entry.btn, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 44, 80)})
 							tw(entry.txt, 0.13, {TextColor3 = Color3.fromRGB(140, 190, 255)})
 						else
-							tw(entry.btn, 0.13, {BackgroundColor3 = Color3.fromRGB(22, 22, 26)})
-							tw(entry.txt, 0.13, {TextColor3 = Color3.fromRGB(170, 170, 185)})
+							tw(entry.btn, 0.13, {BackgroundColor3 = Color3.fromRGB(20, 20, 24)})
+							tw(entry.txt, 0.13, {TextColor3 = Color3.fromRGB(166, 166, 182)})
 						end
 					end
 				end
-
 				local function ToggleDrop()
 					Dropdown.Toggled = not Dropdown.Toggled
 					if Dropdown.Toggled then
 						divLine.Visible = true
 						optHolder.Visible = true
-						tw(chevron, 0.2, {Rotation = 180, ImageColor3 = Color3.fromRGB(70, 140, 255)})
-						tw(dfs, 0.2, {Color = Color3.fromRGB(50, 110, 205)})
-						tw(df, 0.2, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)})
+						tw(chevron, 0.22, {Rotation = 180, ImageColor3 = Color3.fromRGB(70, 140, 255)})
+						tw(dfs, 0.22, {Color = Color3.fromRGB(50, 110, 205)})
+						tw(df, 0.22, {BackgroundColor3 = Color3.fromRGB(26, 26, 32)})
 					else
-						tw(chevron, 0.2, {Rotation = 0, ImageColor3 = Color3.fromRGB(75, 75, 92)})
-						tw(dfs, 0.2, {Color = Color3.fromRGB(40, 40, 50)})
-						tw(df, 0.2, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
+						tw(chevron, 0.2, {Rotation = 0, ImageColor3 = Color3.fromRGB(72, 72, 90)})
+						tw(dfs, 0.2, {Color = Color3.fromRGB(38, 38, 48)})
+						tw(df, 0.2, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)})
 						task.delay(0.15, function()
 							if not Dropdown.Toggled then
 								optHolder.Visible = false
@@ -1367,65 +1249,55 @@ function Library:Create(config)
 						end)
 					end
 				end
-
 				local function AddOptions(opts)
 					for _, option in pairs(opts) do
 						local isSel = option == selectedValue
-
 						local optBtn = Instance.new("TextButton")
 						optBtn.Font = Enum.Font.SourceSans
 						optBtn.Text = ""
 						optBtn.AutoButtonColor = false
-						optBtn.BackgroundColor3 = isSel and Color3.fromRGB(24, 44, 80) or Color3.fromRGB(22, 22, 26)
+						optBtn.BackgroundColor3 = isSel and Color3.fromRGB(24, 44, 80) or Color3.fromRGB(20, 20, 24)
 						optBtn.BorderSizePixel = 0
 						optBtn.Size = UDim2.new(1, 0, 0, 28)
-
 						local optBtnCorner = Instance.new("UICorner")
 						optBtnCorner.CornerRadius = UDim.new(0, 5)
 						optBtnCorner.Parent = optBtn
-
 						local optBtnStroke = Instance.new("UIStroke")
-						optBtnStroke.Color = Color3.fromRGB(36, 36, 46)
+						optBtnStroke.Color = Color3.fromRGB(34, 34, 44)
 						optBtnStroke.Thickness = 1
 						optBtnStroke.Parent = optBtn
-
 						local optTxt = Instance.new("TextLabel")
 						optTxt.Font = Enum.Font.GothamMedium
 						optTxt.Text = tostring(option)
-						optTxt.TextColor3 = isSel and Color3.fromRGB(140, 190, 255) or Color3.fromRGB(170, 170, 185)
+						optTxt.TextColor3 = isSel and Color3.fromRGB(140, 190, 255) or Color3.fromRGB(166, 166, 182)
 						optTxt.TextSize = 11
 						optTxt.TextXAlignment = Enum.TextXAlignment.Left
 						optTxt.BackgroundTransparency = 1
 						optTxt.Position = UDim2.new(0, 10, 0, 0)
 						optTxt.Size = UDim2.new(1, -32, 1, 0)
 						optTxt.Parent = optBtn
-
 						local checkMark = Instance.new("Frame")
 						checkMark.BackgroundColor3 = Color3.fromRGB(70, 140, 255)
 						checkMark.BorderSizePixel = 0
 						checkMark.Position = UDim2.new(1, -20, 0.5, -5)
 						checkMark.Size = UDim2.fromOffset(10, 10)
 						checkMark.Visible = isSel
-
 						local checkMarkCorner = Instance.new("UICorner")
 						checkMarkCorner.CornerRadius = UDim.new(1, 0)
 						checkMarkCorner.Parent = checkMark
 						checkMark.Parent = optBtn
-
 						optBtn.Parent = optHolder
-
 						table.insert(optButtons, {btn = optBtn, value = option, check = checkMark, txt = optTxt})
-
 						optBtn.MouseEnter:Connect(function()
 							if option ~= selectedValue then
-								tw(optBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)})
-								tw(optBtnStroke, 0.12, {Color = Color3.fromRGB(50, 50, 62)})
+								tw(optBtn, 0.11, {BackgroundColor3 = Color3.fromRGB(26, 26, 32)})
+								tw(optBtnStroke, 0.11, {Color = Color3.fromRGB(48, 48, 60)})
 							end
 						end)
 						optBtn.MouseLeave:Connect(function()
 							if option ~= selectedValue then
-								tw(optBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(22, 22, 26)})
-								tw(optBtnStroke, 0.12, {Color = Color3.fromRGB(36, 36, 46)})
+								tw(optBtn, 0.11, {BackgroundColor3 = Color3.fromRGB(20, 20, 24)})
+								tw(optBtnStroke, 0.11, {Color = Color3.fromRGB(34, 34, 44)})
 							end
 						end)
 						optBtn.MouseButton1Click:Connect(function()
@@ -1438,7 +1310,6 @@ function Library:Create(config)
 						end)
 					end
 				end
-
 				function Dropdown:Refresh(opts, del)
 					if del then
 						for _, v in pairs(optHolder:GetChildren()) do
@@ -1449,7 +1320,6 @@ function Library:Create(config)
 					Dropdown.Options = opts
 					AddOptions(opts)
 				end
-
 				function Dropdown:Set(val)
 					selectedValue = val
 					Dropdown.Value = val
@@ -1457,25 +1327,15 @@ function Library:Create(config)
 					refreshChecks()
 					callback(Dropdown.Value)
 				end
-
 				dfHeader.MouseEnter:Connect(function()
-					if not Dropdown.Toggled then
-						tw(df, 0.14, {BackgroundColor3 = Color3.fromRGB(30, 30, 36)})
-					end
+					if not Dropdown.Toggled then tw(df, 0.13, {BackgroundColor3 = Color3.fromRGB(28, 28, 34)}) end
 				end)
 				dfHeader.MouseLeave:Connect(function()
-					if not Dropdown.Toggled then
-						tw(df, 0.14, {BackgroundColor3 = Color3.fromRGB(26, 26, 30)})
-					end
+					if not Dropdown.Toggled then tw(df, 0.13, {BackgroundColor3 = Color3.fromRGB(24, 24, 28)}) end
 				end)
-				dfHeader.MouseButton1Click:Connect(function()
-					ToggleDrop()
-				end)
-
+				dfHeader.MouseButton1Click:Connect(function() ToggleDrop() end)
 				Dropdown:Refresh(ddList, false)
-				if ddDef then
-					dfTitle.Text = ddText .. " — " .. tostring(ddDef)
-				end
+				if ddDef then dfTitle.Text = ddText .. " — " .. tostring(ddDef) end
 				return Dropdown
 			end
 
